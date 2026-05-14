@@ -27,7 +27,7 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(userId) {
-        if (userId.isNotBlank()) viewModel.loadSessions(userId)
+        viewModel.loadSessions(userId)
     }
 
     Scaffold(
@@ -66,7 +66,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             when {
-                uiState.isLoading -> {
+                uiState.isLoading && userId.isBlank() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
