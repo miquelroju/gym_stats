@@ -7,6 +7,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +23,8 @@ fun HomeScreen(
     userId: String,
     onNewSession: () -> Unit,
     onHistory: () -> Unit,
+    onLeaderboard: () -> Unit,
+    onStats: () -> Unit,
     onSignOut: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -35,6 +39,12 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("GymStats") },
                 actions = {
+                    IconButton(onClick = onStats) {
+                        Icon(Icons.Default.BarChart, contentDescription = "Estadísticas")
+                    }
+                    IconButton(onClick = onLeaderboard) {
+                        Icon(Icons.Default.EmojiEvents, contentDescription = "Leaderboard")
+                    }
                     IconButton(onClick = onHistory) {
                         Icon(Icons.Default.DateRange, contentDescription = "Historial")
                     }

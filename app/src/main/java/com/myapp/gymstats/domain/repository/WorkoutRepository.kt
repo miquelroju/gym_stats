@@ -1,6 +1,7 @@
 package com.myapp.gymstats.domain.repository
 
 import com.myapp.gymstats.domain.model.Exercise
+import com.myapp.gymstats.domain.model.LeaderboardEntry
 import com.myapp.gymstats.domain.model.WorkoutSession
 import com.myapp.gymstats.domain.model.WorkoutSet
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +26,16 @@ interface WorkoutRepository {
         exerciseId: String,
         userId: String
     ): Flow<List<WorkoutSet>>
+
+    // Leaderboard
+    suspend fun getLeaderboard(muscleGroup: String): List<LeaderboardEntry>
+
+    // Perfil
+    suspend fun saveUserProfile(userId: String, username: String)
+    suspend fun getUserProfile(userId: String): String? // returns username
+
+    // Historial amb sets inclosos (per a pantalla de detall)
+    suspend fun getSessionWithSets(sessionId: String): WorkoutSession
 
     // Sincro amb Supabase
     suspend fun syncPendingData()

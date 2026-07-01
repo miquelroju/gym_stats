@@ -3,6 +3,7 @@ package com.myapp.gymstats.ui.features.session
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.myapp.gymstats.domain.model.Exercise
+import com.myapp.gymstats.domain.model.Score
 import com.myapp.gymstats.domain.model.WorkoutSession
 import com.myapp.gymstats.domain.model.WorkoutSet
 import com.myapp.gymstats.domain.usecase.SaveWorkoutSessionUseCase
@@ -22,7 +23,8 @@ data class SessionUiState(
     val exercises: List<Exercise> = emptyList(),
     val currentSets: List<WorkoutSet> = emptyList(),
     val isSaved: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val motivationMessage: String? = null
 )
 
 @HiltViewModel
@@ -92,7 +94,35 @@ class SessionViewModel @Inject constructor(
 
             runCatching {
                 saveWorkoutSession(session, setsWithSession)
-                _uiState.value = SessionUiState(isSaved = true)
+
+                val messages = mutableListOf<String>()
+                val exerciseIds = setsWithSession.map { it.exerciseId }.distinct()
+
+                exerciseIds.forEach { exerciseId ->
+                    val exerciseName = setsWithSession
+                        .first { it.exerciseId == exerciseId }.exerciseName
+                    val currentBest = Score.bestForExercise(setsWithSession, exerciseId)
+
+                    val history = repository.getExerciseProgress(exerciseId, userId)
+                    var previousBest = 0.0
+                    history.collect { prevSets ->
+                        previousBest = prevSets
+                            .filter { it.sessionId != sessionId }
+                            .groupBy { it.sessionId }
+                            .mapValues { (_, s) -> Score.bestForExercise(s, exerciseId) }
+                            .values.maxOrNull() ?: 0.0
+                    }
+
+                    if (previousBest > 0.0 && currentBest > previousBest) {
+                        val improvement = String.format("%.1f", currentBest - previousBest)
+                        messages.add("\uD83D\uDCAA \$exerciseName: +\$improvement pts de mejora!")
+                    }
+                }
+
+                _uiState.value =  SessionUiState(
+                    isSaved = messages.isEmpty(),
+                    motivationMessage = if (messages.isNotEmpty()) messages.joinToString("\n") else null
+                )
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -100,5 +130,12 @@ class SessionViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun onMotivationDismissed() {
+        _uiState.value = _uiState.value.copy(
+            isSaved = true,
+            motivationMessage = null
+        )
     }
 }

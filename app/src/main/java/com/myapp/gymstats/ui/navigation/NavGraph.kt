@@ -11,7 +11,9 @@ import com.myapp.gymstats.ui.features.auth.AuthViewModel
 import com.myapp.gymstats.ui.features.auth.LoginScreen
 import com.myapp.gymstats.ui.features.history.HistoryScreen
 import com.myapp.gymstats.ui.features.home.HomeScreen
+import com.myapp.gymstats.ui.features.leaderboard.LeaderboardScreen
 import com.myapp.gymstats.ui.features.session.SessionScreen
+import com.myapp.gymstats.ui.features.stats.StatsScreen
 
 @Composable
 fun NavGraph(
@@ -42,6 +44,8 @@ fun NavGraph(
                 userId = authState.userId,
                 onNewSession = { navController.navigate(NavRoutes.Session.route) },
                 onHistory = { navController.navigate(NavRoutes.History.route) },
+                onLeaderboard = { navController.navigate(NavRoutes.Leaderboard.route) },
+                onStats = { navController.navigate(NavRoutes.Stats.route) },
                 onSignOut = {
                     authViewModel.signOut()
                     navController.navigate(NavRoutes.Login.route) {
@@ -60,6 +64,17 @@ fun NavGraph(
 
         composable(NavRoutes.History.route) {
             HistoryScreen(
+                userId = authState.userId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(NavRoutes.Leaderboard.route) {
+            LeaderboardScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(NavRoutes.Stats.route) {
+            StatsScreen(
                 userId = authState.userId,
                 onBack = { navController.popBackStack() }
             )

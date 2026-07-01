@@ -75,4 +75,7 @@ dependencies {
 
     // Coroutines
     implementation(libs.coroutines.android)
+
+    // Icons
+    implementation("androidx.compose.material:material-icons-extended")
 }

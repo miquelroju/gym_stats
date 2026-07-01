@@ -35,6 +35,19 @@ fun SessionScreen(
         if (uiState.isSaved) onSessionSaved()
     }
 
+    uiState.motivationMessage?.let { message ->
+        AlertDialog(
+            onDismissRequest = { viewModel.onMotivationDismissed() },
+            title = { Text("\uD83C\uDFC6 ¡Nuevo récord!") },
+            text = { Text(message) },
+            confirmButton = {
+                Button(onClick = { viewModel.onMotivationDismissed() }) {
+                    Text("¡A por más!")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Nueva sesión") })

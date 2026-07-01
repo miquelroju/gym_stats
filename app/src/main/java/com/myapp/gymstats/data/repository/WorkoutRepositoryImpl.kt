@@ -7,16 +7,23 @@ import com.myapp.gymstats.data.local.dao.WorkoutSetDao
 import com.myapp.gymstats.data.local.entity.toDomain
 import com.myapp.gymstats.data.local.entity.toEntity
 import com.myapp.gymstats.data.remote.ExerciseDto
+import com.myapp.gymstats.data.remote.LeaderboardEntryDto
 import com.myapp.gymstats.data.remote.SupabaseClientProvider
+import com.myapp.gymstats.data.remote.UserProfileDto
 import com.myapp.gymstats.data.remote.toDto
 import com.myapp.gymstats.domain.model.Exercise
+import com.myapp.gymstats.domain.model.LeaderboardEntry
 import com.myapp.gymstats.domain.model.WorkoutSession
 import com.myapp.gymstats.domain.model.WorkoutSet
 import com.myapp.gymstats.domain.repository.WorkoutRepository
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -88,6 +95,63 @@ class WorkoutRepositoryImpl @Inject constructor(
         setDao.getSetsByExerciseAndUser(exerciseId, userId).map { sets ->
             sets.map { it.toDomain() }
         }
+
+    // -------
+    override suspend fun getLeaderboard(muscleGroup: String): List<LeaderboardEntry> {
+        return runCatching {
+            val params = buildJsonObject {
+                put("p_muscle_group", muscleGroup)
+            }
+            client.postgrest.rpc("get_leaderboard", params)
+                .decodeList<LeaderboardEntryDto>()
+                .map {
+                    LeaderboardEntry(
+                        username = it.username,
+                        exerciseName = it.exercise,
+                        bestScore = it.bestScore,
+                        userId = it.userId
+                    )
+                }
+        }.getOrElse {
+            Log.w("WorkoutRepo", "Leaderboard fetch failed: ${it.message}")
+            emptyList()
+        }
+    }
+
+    override suspend fun saveUserProfile(userId: String, username: String) {
+        runCatching {
+            client.from("user_profiles").upsert(
+                UserProfileDto(id = userId, username = username)
+            )
+        }.onFailure { Log.w("WorkoutRepo", "Profile save failed: ${it.message}") }
+    }
+
+    override suspend fun getUserProfile(userId: String): String? {
+        return runCatching {
+            client.from("user_profiles")
+                .select{
+                    filter { eq("id", userId) }
+                }
+                .decodeSingleOrNull<UserProfileDto>()?.username
+        }.getOrNull()
+    }
+
+    override suspend fun getSessionWithSets(sessionId: String): WorkoutSession {
+        val session = sessionDao.getSessionById(sessionId)
+            ?: return WorkoutSession("", "", "", "")
+        /* val sets = setDao.getSetsBySession(sessionId)
+            .map { entities -> entities.map { it.toDomain() } }
+            .let { flow ->
+                var result = emptyList<WorkoutSet>()
+                flow.collect { result = it }
+                result
+            }
+        */
+        val sets = setDao.getSetsBySession(sessionId).first()
+            .map { it.toDomain() }
+        return session.toDomain().copy(sets = sets)
+    }
+    // -------
 
     // --- Sincro amb Supabase -------------------------------------
     override suspend fun syncPendingData() {

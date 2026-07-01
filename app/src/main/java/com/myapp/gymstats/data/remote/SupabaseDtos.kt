@@ -55,3 +55,17 @@ fun WorkoutSetEntity.toDto() = WorkoutSetDto(
     reps = reps,
     weightKg = weightKg
 )
+
+@Serializable
+data class UserProfileDto(
+    val id: String,
+    val username: String
+)
+
+@Serializable
+data class LeaderboardEntryDto(
+    val username: String,
+    val exercise: String,
+    @SerialName("best_score") val bestScore: Double,
+    @SerialName("user_id") val userId: String
+)
