@@ -69,3 +69,26 @@ data class LeaderboardEntryDto(
     @SerialName("best_score") val bestScore: Double,
     @SerialName("user_id") val userId: String
 )
+
+@Serializable
+data class CheckinFeedDto(
+    @SerialName("user_id") val userId: String,
+    val username: String,
+    @SerialName("avatar_emoji") val avatarEmoji: String,
+    @SerialName("checked_in") val checkedIn: Boolean
+)
+
+@Serializable
+data class UserSettingsDto(
+    @SerialName("user_id") val userId: String,
+    @SerialName("rest_timer_seconds") val restTimerSeconds: Int = 90,
+    @SerialName("expected_gap_days") val expectedGapDays: Int = 1,
+    @SerialName("grace_days") val graceDays: Int = 1,
+    @SerialName("notifications_enabled") val notificationsEnabled: Boolean = true
+)
+
+@Serializable
+data class DailyCheckinDto(
+    @SerialName("user_id") val userId: String,
+    val date: String
+)

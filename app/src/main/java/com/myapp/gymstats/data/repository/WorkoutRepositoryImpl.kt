@@ -6,13 +6,18 @@ import com.myapp.gymstats.data.local.dao.WorkoutSessionDao
 import com.myapp.gymstats.data.local.dao.WorkoutSetDao
 import com.myapp.gymstats.data.local.entity.toDomain
 import com.myapp.gymstats.data.local.entity.toEntity
+import com.myapp.gymstats.data.remote.CheckinFeedDto
+import com.myapp.gymstats.data.remote.DailyCheckinDto
 import com.myapp.gymstats.data.remote.ExerciseDto
 import com.myapp.gymstats.data.remote.LeaderboardEntryDto
 import com.myapp.gymstats.data.remote.SupabaseClientProvider
 import com.myapp.gymstats.data.remote.UserProfileDto
+import com.myapp.gymstats.data.remote.UserSettingsDto
 import com.myapp.gymstats.data.remote.toDto
+import com.myapp.gymstats.domain.model.CheckinFeedEntry
 import com.myapp.gymstats.domain.model.Exercise
 import com.myapp.gymstats.domain.model.LeaderboardEntry
+import com.myapp.gymstats.domain.model.UserSettings
 import com.myapp.gymstats.domain.model.WorkoutSession
 import com.myapp.gymstats.domain.model.WorkoutSet
 import com.myapp.gymstats.domain.repository.WorkoutRepository
@@ -24,6 +29,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -151,7 +157,84 @@ class WorkoutRepositoryImpl @Inject constructor(
             .map { it.toDomain() }
         return session.toDomain().copy(sets = sets)
     }
-    // -------
+    // --- Check-in social -----------------------------------------
+    override suspend fun checkInToday(userId: String) {
+        runCatching {
+            val today = LocalDate.now().toString()
+            client.from("daily_checkins").insert(
+                DailyCheckinDto(userId = userId, date = today)
+            )
+        }.onFailure{ Log.w("WorkoutRepo", "Checkin failed: ${it.message}") }
+    }
+
+    override suspend fun hasCheckedInToday(userId: String): Boolean {
+        return runCatching {
+            val today = LocalDate.now().toString()
+            client.from("daily_checkins")
+                .select {
+                    filter {
+                        eq("user_id", userId)
+                        eq("date", today)
+                    }
+                }
+                .decodeList<DailyCheckinDto>()
+                .isNotEmpty()
+        }.getOrElse { false }
+    }
+
+    override suspend fun getCheckinFeed(): List<CheckinFeedEntry> {
+        return runCatching {
+            client.postgrest.rpc("get_checkin_feed")
+                .decodeList<CheckinFeedDto>()
+                .map {
+                    CheckinFeedEntry(
+                        userId = it.userId,
+                        username = it.username,
+                        avatarEmoji = it.avatarEmoji,
+                        checkedIn = it.checkedIn
+                    )
+                }
+        }.getOrElse { emptyList() }
+    }
+
+    override suspend fun getUserStreak(userId: String): Int {
+        return runCatching {
+            val params = buildJsonObject { put("p_user_id", userId) }
+            client.postgrest.rpc("get_user_streak", params)
+                .decodeAs<Int>()
+        }.getOrElse { 0 }
+    }
+
+    // --- Configuració --------------------------------------------
+    override suspend fun getUserSettings(userId: String): UserSettings {
+        return runCatching {
+            client.from("user_settings")
+                .select { filter { eq("user_id", userId) } }
+                .decodeSingleOrNull<UserSettingsDto>()
+                ?.let {
+                    UserSettings(
+                        restTimerSeconds = it.restTimerSeconds,
+                        expectedGapDays = it.expectedGapDays,
+                        graceDays = it.graceDays,
+                        notificationsEnabled = it.notificationsEnabled
+                    )
+                } ?: UserSettings()
+        }.getOrElse { UserSettings() }
+    }
+
+    override suspend fun saveUserSettings(userId: String, settings: UserSettings) {
+        runCatching {
+            client.from("user_settings").upsert(
+                UserSettingsDto(
+                    userId = userId,
+                    restTimerSeconds = settings.restTimerSeconds,
+                    expectedGapDays = settings.expectedGapDays,
+                    graceDays = settings.graceDays,
+                    notificationsEnabled = settings.notificationsEnabled
+                )
+            )
+        }.onFailure { Log.w("WorkoutRepo", "Settings save failed: ${it.message}") }
+    }
 
     // --- Sincro amb Supabase -------------------------------------
     override suspend fun syncPendingData() {
