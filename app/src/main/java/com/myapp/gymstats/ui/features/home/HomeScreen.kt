@@ -9,6 +9,8 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +27,8 @@ fun HomeScreen(
     onHistory: () -> Unit,
     onLeaderboard: () -> Unit,
     onStats: () -> Unit,
+    onSocial: () -> Unit,
+    onSettings: () -> Unit,
     onSignOut: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -47,6 +51,12 @@ fun HomeScreen(
                     }
                     IconButton(onClick = onHistory) {
                         Icon(Icons.Default.DateRange, contentDescription = "Historial")
+                    }
+                    IconButton(onClick = onSocial) {
+                        Icon(Icons.Default.Group, contentDescription = "Social")
+                    }
+                    IconButton(onClick = onSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Configuración")
                     }
                     IconButton(onClick = onSignOut) {
                         Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar sesión")

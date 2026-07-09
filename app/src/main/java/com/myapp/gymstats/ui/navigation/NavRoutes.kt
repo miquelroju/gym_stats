@@ -7,4 +7,6 @@ sealed class NavRoutes(val route: String) {
     object History      : NavRoutes("history")
     object Leaderboard  : NavRoutes("leaderboard")
     object Stats        : NavRoutes("stats")
+    object Social       : NavRoutes("social")
+    object Settings     : NavRoutes("settings")
 }
