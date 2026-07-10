@@ -31,6 +31,10 @@ fun SessionScreen(
     var notes by remember { mutableStateOf("") }
     var dropdownExpanded by remember { mutableStateOf(false) }
 
+    LaunchedEffect(userId) {
+        if (userId.isNotBlank()) viewModel.loadRestTimerSetting(userId)
+    }
+
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) onSessionSaved()
     }
@@ -65,7 +69,6 @@ fun SessionScreen(
                 Text("Ejercicio", style = MaterialTheme.typography.labelLarge)
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // ← CAMBIO: muestra spinner mientras carga, desplegable cuando está listo
                 if (uiState.isSyncingExercises) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -155,6 +158,7 @@ fun SessionScreen(
                         val r = reps.toIntOrNull() ?: return@Button
                         val w = weight.toFloatOrNull() ?: return@Button
                         viewModel.addSet(exercise.id, exercise.name, r, w)
+                        viewModel.startRestTimer()
                         reps = ""
                         weight = ""
                     },
@@ -165,6 +169,18 @@ fun SessionScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Añadir serie")
+                }
+            }
+
+            if (uiState.isTimerRunning || uiState.currentSets.isNotEmpty()) {
+                item {
+                    RestTimerCard(
+                        remainingSeconds = uiState.timerRemaining,
+                        totalSeconds = uiState.restTimerSeconds,
+                        isRunning = uiState.isTimerRunning,
+                        onStart = { viewModel.startRestTimer() },
+                        onCancel = { viewModel.cancelRestTimer() }
+                    )
                 }
             }
 

@@ -30,8 +30,14 @@ class SettingsViewModel @Inject constructor(
         if (userId.isBlank()) return
         this.userId = userId
         viewModelScope.launch {
-            val settings = repository.getUserSettings(userId)
-            _uiState.value = SettingsUiState(isLoading = false, settings = settings)
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            try {
+                val settings = repository.getUserSettings(userId)
+                _uiState.value = SettingsUiState(isLoading = false, settings = settings)
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsViewModel", "Error loading settings", e)
+                _uiState.value = SettingsUiState(isLoading = false, settings = UserSettings())
+            }
         }
     }
 

@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.time.LocalDate
@@ -200,25 +201,30 @@ class WorkoutRepositoryImpl @Inject constructor(
     override suspend fun getUserStreak(userId: String): Int {
         return runCatching {
             val params = buildJsonObject { put("p_user_id", userId) }
-            client.postgrest.rpc("get_user_streak", params)
-                .decodeAs<Int>()
-        }.getOrElse { 0 }
+            val result = client.postgrest.rpc("get_user_streak", params)
+            result.data.trim().toIntOrNull() ?: 0
+        }.getOrElse {
+            Log.e("WorkoutRepo", "Streak fetch failed: ${it.message}")
+            0
+        }
     }
 
     // --- Configuració --------------------------------------------
     override suspend fun getUserSettings(userId: String): UserSettings {
         return runCatching {
-            client.from("user_settings")
-                .select { filter { eq("user_id", userId) } }
-                .decodeSingleOrNull<UserSettingsDto>()
-                ?.let {
-                    UserSettings(
-                        restTimerSeconds = it.restTimerSeconds,
-                        expectedGapDays = it.expectedGapDays,
-                        graceDays = it.graceDays,
-                        notificationsEnabled = it.notificationsEnabled
-                    )
-                } ?: UserSettings()
+            withTimeout(8000) {
+                client.from("user_settings")
+                    .select { filter { eq("user_id", userId) } }
+                    .decodeSingleOrNull<UserSettingsDto>()
+                    ?.let {
+                        UserSettings(
+                            restTimerSeconds = it.restTimerSeconds,
+                            expectedGapDays = it.expectedGapDays,
+                            graceDays = it.graceDays,
+                            notificationsEnabled = it.notificationsEnabled
+                        )
+                    } ?: UserSettings()
+            }
         }.getOrElse { UserSettings() }
     }
 

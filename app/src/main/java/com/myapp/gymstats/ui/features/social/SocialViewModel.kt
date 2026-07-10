@@ -34,17 +34,24 @@ class SocialViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
+            try {
+                val feed = repository.getCheckinFeed()
+                val checkedIn = repository.hasCheckedInToday(userId)
+                val streak = repository.getUserStreak(userId)
 
-            val feed = repository.getCheckinFeed()
-            val checkedIn = repository.hasCheckedInToday(userId)
-            val streak = repository.getUserStreak(userId)
-
-            _uiState.value = SocialUiState(
-                isLoading = false,
-                feed = feed,
-                hasCheckedInToday = checkedIn,
-                myStreak = streak
-            )
+                _uiState.value = SocialUiState(
+                    isLoading = false,
+                    feed = feed,
+                    hasCheckedInToday = checkedIn,
+                    myStreak = streak
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("SocialViewModel", "Error loading social data", e)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    feed = emptyList()
+                )
+            }
         }
     }
 

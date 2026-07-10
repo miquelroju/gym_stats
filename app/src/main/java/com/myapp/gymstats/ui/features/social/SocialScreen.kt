@@ -1,9 +1,9 @@
 package com.myapp.gymstats.ui.features.social
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocalFireDepartment
@@ -43,15 +43,18 @@ fun SocialScreen(
     ) { padding ->
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+                .fillMaxSize()
+                .padding(padding)
         ) {
+            Spacer(modifier = Modifier.height(8.dp))
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
                 Column(
@@ -67,12 +70,14 @@ fun SocialScreen(
                         Icon(
                             Icons.Default.LocalFireDepartment,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(28.dp)
                         )
                         Text(
                             "${uiState.myStreak} días de racha",
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -81,7 +86,16 @@ fun SocialScreen(
                     Button(
                         onClick = { viewModel.checkIn() },
                         enabled = !uiState.hasCheckedInToday && !uiState.isCheckingIn,
-                        modifier = Modifier.fillMaxWidth()
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (uiState.hasCheckedInToday)
+                                MaterialTheme.colorScheme.surface
+                            else
+                                MaterialTheme.colorScheme.primary
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
                     ) {
                         if (uiState.isCheckingIn) {
                             CircularProgressIndicator(
@@ -91,19 +105,21 @@ fun SocialScreen(
                             )
                         } else {
                             Text(
-                                if (uiState.hasCheckedInToday)
+                                text = if (uiState.hasCheckedInToday)
                                     "✅ Ya entrenaste hoy"
                                 else
-                                    "\uD83D\uDCAA He entrenado hoy"
+                                    "💪 He entrenado hoy",
+                                style = MaterialTheme.typography.titleSmall,
+                                maxLines = 1
                             )
                         }
                     }
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider()
 
-            // --- Feed de usuarios -------------------------------------
             Text(
                 "Actividad de hoy",
                 style = MaterialTheme.typography.titleMedium,

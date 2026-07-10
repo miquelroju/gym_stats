@@ -9,9 +9,12 @@ import com.myapp.gymstats.domain.model.WorkoutSet
 import com.myapp.gymstats.domain.usecase.SaveWorkoutSessionUseCase
 import com.myapp.gymstats.domain.repository.WorkoutRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.UUID
@@ -24,7 +27,10 @@ data class SessionUiState(
     val currentSets: List<WorkoutSet> = emptyList(),
     val isSaved: Boolean = false,
     val error: String? = null,
-    val motivationMessage: String? = null
+    val motivationMessage: String? = null,
+    val restTimerSeconds: Int = 90,
+    val timerRemaining: Int = 0,
+    val isTimerRunning: Boolean = false
 )
 
 @HiltViewModel
@@ -49,7 +55,8 @@ class SessionViewModel @Inject constructor(
             repository.getAllExercises().collect { exercises ->
                 _uiState.value = _uiState.value.copy(
                     exercises = exercises,
-                    isSyncingExercises = exercises.isEmpty())
+                    isSyncingExercises = exercises.isEmpty()
+                )
             }
         }
     }
@@ -82,7 +89,8 @@ class SessionViewModel @Inject constructor(
         if (sets.isEmpty()) return
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+
             val sessionId = UUID.randomUUID().toString()
             val session = WorkoutSession(
                 id = sessionId,
@@ -92,7 +100,7 @@ class SessionViewModel @Inject constructor(
             )
             val setsWithSession = sets.map { it.copy(sessionId = sessionId) }
 
-            runCatching {
+            try {
                 saveWorkoutSession(session, setsWithSession)
 
                 val messages = mutableListOf<String>()
@@ -103,27 +111,26 @@ class SessionViewModel @Inject constructor(
                         .first { it.exerciseId == exerciseId }.exerciseName
                     val currentBest = Score.bestForExercise(setsWithSession, exerciseId)
 
-                    val history = repository.getExerciseProgress(exerciseId, userId)
-                    var previousBest = 0.0
-                    history.collect { prevSets ->
-                        previousBest = prevSets
-                            .filter { it.sessionId != sessionId }
-                            .groupBy { it.sessionId }
-                            .mapValues { (_, s) -> Score.bestForExercise(s, exerciseId) }
-                            .values.maxOrNull() ?: 0.0
-                    }
+                    val prevSets = repository.getExerciseProgress(exerciseId, userId).first()
+
+                    val previousBest = prevSets
+                        .filter { it.sessionId != sessionId }
+                        .groupBy { it.sessionId }
+                        .mapValues { (_, s) -> Score.bestForExercise(s, exerciseId) }
+                        .values.maxOrNull() ?: 0.0
 
                     if (previousBest > 0.0 && currentBest > previousBest) {
                         val improvement = String.format("%.1f", currentBest - previousBest)
-                        messages.add("\uD83D\uDCAA \$exerciseName: +\$improvement pts de mejora!")
+                        messages.add("💪 $exerciseName: +$improvement pts de mejora!")
                     }
                 }
 
-                _uiState.value =  SessionUiState(
+                _uiState.value = SessionUiState(
                     isSaved = messages.isEmpty(),
                     motivationMessage = if (messages.isNotEmpty()) messages.joinToString("\n") else null
                 )
-            }.onFailure { e ->
+            } catch (e: Exception) {
+                android.util.Log.e("SessionViewModel", "Error saving session", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = e.message ?: "Error al guardar la sesión"
@@ -137,5 +144,52 @@ class SessionViewModel @Inject constructor(
             isSaved = true,
             motivationMessage = null
         )
+    }
+
+    private var timerJob: Job? = null
+
+    fun loadRestTimerSetting(userId: String) {
+        viewModelScope.launch {
+            try {
+                val settings = repository.getUserSettings(userId)
+                _uiState.value = _uiState.value.copy(
+                    restTimerSeconds = settings.restTimerSeconds
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("SessionViewModel", "Error loading rest timer setting", e)
+            }
+        }
+    }
+
+    fun startRestTimer() {
+        timerJob?.cancel()
+        val totalSeconds = _uiState.value.restTimerSeconds
+        _uiState.value = _uiState.value.copy(
+            timerRemaining = totalSeconds,
+            isTimerRunning = true
+        )
+
+        timerJob = viewModelScope.launch {
+            var remaining = totalSeconds
+            while (remaining > 0) {
+                delay(1000)
+                remaining--
+                _uiState.value = _uiState.value.copy(timerRemaining = remaining)
+            }
+            _uiState.value = _uiState.value.copy(isTimerRunning = false)
+        }
+    }
+
+    fun cancelRestTimer() {
+        timerJob?.cancel()
+        _uiState.value = _uiState.value.copy(
+            isTimerRunning = false,
+            timerRemaining = 0
+        )
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        timerJob?.cancel()
     }
 }

@@ -6,6 +6,7 @@ import com.myapp.gymstats.data.remote.SupabaseClientProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,6 +32,23 @@ class AuthViewModel @Inject constructor(
 
     init {
         checkCurrentSession()
+
+        viewModelScope.launch {
+            auth.sessionStatus.collect { status ->
+                when (status) {
+                    is SessionStatus.Authenticated -> {
+                        _uiState.value = AuthUiState(
+                            isAuthenticated = true,
+                            userId = status.session.user?.id ?: ""
+                        )
+                    }
+                    is SessionStatus.NotAuthenticated -> {
+                        _uiState.value = AuthUiState(isAuthenticated = false, userId = "")
+                    }
+                    else -> Unit
+                }
+            }
+        }
     }
 
     private fun checkCurrentSession() {
@@ -58,7 +76,7 @@ class AuthViewModel @Inject constructor(
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Error al registrarse"
+                    error = mapAuthError(e)
                 )
             }
         }
@@ -69,15 +87,15 @@ class AuthViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             runCatching {
                 auth.signInWith(Email) {
-                    this.email
-                    this.password
+                    this.email = email
+                    this.password = password
                 }
                 val userId = auth.currentUserOrNull()?.id ?: ""
                 _uiState.value = AuthUiState(isAuthenticated = true, userId = userId)
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Error al inciar sesión"
+                    error = mapAuthError(e)
                 )
             }
         }
@@ -87,6 +105,24 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { auth.signOut() }
             _uiState.value = AuthUiState()
+        }
+    }
+
+    private fun mapAuthError(e: Throwable): String {
+        val message = e.message ?: ""
+        return when {
+            message.contains("Invalid login credentials", ignoreCase = true) ->
+                "Email o contraseña incorrectos"
+            message.contains("User already registered", ignoreCase = true) ->
+                "Ya existe una cuenta con este email"
+            message.contains("Password should be at least", ignoreCase = true) ->
+                "La contraseña debe tener al menos 6 caracteres"
+            message.contains("Unable to validate email", ignoreCase = true) ->
+                "El email no es válido"
+            message.contains("network", ignoreCase = true) ||
+            message.contains("timeout", ignoreCase = true) ->
+                "Sin conexión. Comprueba tu internet"
+            else -> "Ha ocurrido un error. Inténtalo de nuevo."
         }
     }
 }

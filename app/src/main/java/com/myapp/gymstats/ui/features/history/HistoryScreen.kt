@@ -23,7 +23,7 @@ fun HistoryScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(userId) {
-        if (userId.isNotBlank()) viewModel.loadSessions(userId)
+        if (userId.isNotBlank()) viewModel.load(userId)
     }
 
     Scaffold(

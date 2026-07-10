@@ -8,13 +8,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class HistoryUiState(
     val isLoading: Boolean = true,
-    val sessions: List<WorkoutSession> = emptyList(),
-    val error: String? = null
+    val sessions: List<WorkoutSession> = emptyList()
 )
 
 @HiltViewModel
@@ -25,13 +25,16 @@ class HistoryViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HistoryUiState())
     val uiState: StateFlow<HistoryUiState> = _uiState.asStateFlow()
 
-    fun loadSessions(userId: String) {
+    fun load(userId: String) {
+        if (userId.isBlank()) return
         viewModelScope.launch {
-            getSessionHistory(userId).collect { sessions ->
-                _uiState.value = HistoryUiState(
-                    isLoading = false,
-                    sessions = sessions
-                )
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            try {
+                val sessions = getSessionHistory(userId).first()
+                _uiState.value = HistoryUiState(isLoading = false, sessions = sessions)
+            } catch (e: Exception) {
+                android.util.Log.e("HistoryViewModel", "Error loading history", e)
+                _uiState.value = HistoryUiState(isLoading = false, sessions = emptyList())
             }
         }
     }

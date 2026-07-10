@@ -72,11 +72,20 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         uiState.error?.let { error ->
-            Text(
-                text = error,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
-            )
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
         }
 
