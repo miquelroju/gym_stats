@@ -7,6 +7,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -78,4 +80,12 @@ dependencies {
 
     // Icons
     implementation("androidx.compose.material:material-icons-extended")
+
+    // Widget
+    implementation("androidx.glance:glance-appwidget:1.1.1")
+    implementation("androidx.glance:glance-material3:1.1.1")
+
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:34.16.0"))
+    implementation("com.google.firebase:firebase-messaging-ktx")
 }

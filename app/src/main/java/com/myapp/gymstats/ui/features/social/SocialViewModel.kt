@@ -1,10 +1,14 @@
 package com.myapp.gymstats.ui.features.social
 
+import android.content.Context
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.myapp.gymstats.domain.model.CheckinFeedEntry
 import com.myapp.gymstats.domain.repository.WorkoutRepository
+import com.myapp.gymstats.widget.StreakGlanceWidget
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +25,8 @@ data class SocialUiState(
 
 @HiltViewModel
 class SocialViewModel @Inject constructor(
-    private val repository: WorkoutRepository
+    private val repository: WorkoutRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SocialUiState())
     val uiState: StateFlow<SocialUiState> = _uiState.asStateFlow()
@@ -63,6 +68,8 @@ class SocialViewModel @Inject constructor(
             repository.checkInToday(currentUserId)
             load(currentUserId) // recarga feed + racha actualizada
             _uiState.value = _uiState.value.copy(isCheckingIn = false)
+
+            StreakGlanceWidget().updateAll(context)
         }
     }
 }

@@ -1,9 +1,12 @@
 package com.myapp.gymstats.ui.features.auth
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.myapp.gymstats.data.remote.SupabaseClientProvider
+import com.myapp.gymstats.widget.WidgetEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
@@ -22,7 +25,8 @@ data class AuthUiState (
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val supabaseProvider: SupabaseClientProvider
+    private val supabaseProvider: SupabaseClientProvider,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -37,10 +41,12 @@ class AuthViewModel @Inject constructor(
             auth.sessionStatus.collect { status ->
                 when (status) {
                     is SessionStatus.Authenticated -> {
+                        val uid = status.session.user?.id ?: ""
                         _uiState.value = AuthUiState(
                             isAuthenticated = true,
-                            userId = status.session.user?.id ?: ""
+                            userId = uid
                         )
+                        WidgetEntryPoint.saveCurrentUserId(context, uid)
                     }
                     is SessionStatus.NotAuthenticated -> {
                         _uiState.value = AuthUiState(isAuthenticated = false, userId = "")
