@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.myapp.gymstats.data.remote.SupabaseClientProvider
+import com.myapp.gymstats.domain.repository.WorkoutRepository
 import com.myapp.gymstats.widget.WidgetEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -26,6 +27,7 @@ data class AuthUiState (
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val supabaseProvider: SupabaseClientProvider,
+    private val repository: WorkoutRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 

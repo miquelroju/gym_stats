@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.myapp.gymstats.domain.model.WorkoutSession
+import com.myapp.gymstats.ui.navigation.NavRoutes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +32,7 @@ fun HomeScreen(
     onSocial: () -> Unit,
     onSettings: () -> Unit,
     onSignOut: () -> Unit,
+    onCreacioDeRutinas: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -54,6 +57,9 @@ fun HomeScreen(
                     }
                     IconButton(onClick = onSocial) {
                         Icon(Icons.Default.Group, contentDescription = "Social")
+                    }
+                    IconButton(onClick = onCreacioDeRutinas) {
+                        Icon(Icons.Default.NoteAdd, contentDescription = "Crear Rutina")
                     }
                     IconButton(onClick = onSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Configuración")

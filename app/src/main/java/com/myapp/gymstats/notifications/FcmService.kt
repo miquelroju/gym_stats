@@ -44,7 +44,7 @@ class FcmService : FirebaseMessagingService() {
     private fun showNotification(title: String, body: String) {
         val channelId = "gymstats_social"
         val manager =  getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.0) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId, "Notificaciones sociales",
                 NotificationManager.IMPORTANCE_HIGH
@@ -55,7 +55,7 @@ class FcmService : FirebaseMessagingService() {
         val notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle(title)
             .setContentText(body)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setAutoCancel(true)
             .build()
 
