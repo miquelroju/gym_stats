@@ -54,10 +54,14 @@ class FcmService : FirebaseMessagingService() {
 
         val notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle(title)
-            .setContentText(body)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setAutoCancel(true)
-            .build()
+                .setContentText(body)
+    <<<<<<< HEAD
+    =======
+                //.setSmallIcon(R.drawable.ic_notification)
+    >>>>>>> eab9a227dfbe457352f4e820aee204dc1293e138
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setAutoCancel(true)
+                .build()
 
         manager.notify(System.currentTimeMillis().toInt(), notification)
     }
