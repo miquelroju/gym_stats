@@ -47,6 +47,13 @@ class AuthViewModel @Inject constructor(
                             userId = uid
                         )
                         WidgetEntryPoint.saveCurrentUserId(context, uid)
+
+                        com.google.firebase.messaging.FirebaseMessaging.getInstance().token
+                            .addOnSuccessListener { token ->
+                                viewModelScope.launch {
+                                    repository.saveDeviceToken(uid, token)
+                                }
+                            }
                     }
                     is SessionStatus.NotAuthenticated -> {
                         _uiState.value = AuthUiState(isAuthenticated = false, userId = "")

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1085116968698",
+    "project_id": "gym-stats-eb2bf",
+    "storage_bucket": "gym-stats-eb2bf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1085116968698:android:51cf5f621e223507afa343",
+        "android_client_info": {
+          "package_name": "com.myapp.gymstats"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCf2g0oV3tks7i4QSHVm6GZt7oUFZnvj-4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

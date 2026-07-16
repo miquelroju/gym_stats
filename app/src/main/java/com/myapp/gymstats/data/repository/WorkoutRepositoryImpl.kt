@@ -266,4 +266,13 @@ class WorkoutRepositoryImpl @Inject constructor(
             Log.w("WorkoutRepo", "Sync failed, will retry later: ${e.message}")
         }
     }
+
+    // --- Firebase ---
+    override suspend fun saveDeviceToken(userId: String, token: String) {
+        runCatching {
+            client.from("device_tokens").upsert(
+                mapOf("user_id" to userId, "fcm_token" to token)
+            )
+        }.onFailure { Log.w("WorkoutRepo", "Token save failed: ${it.message}") }
+    }
 }
