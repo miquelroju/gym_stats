@@ -78,7 +78,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun signUp(email: String, password: String) {
+    fun signUp(email: String, password: String, username: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             runCatching {
@@ -87,6 +87,7 @@ class AuthViewModel @Inject constructor(
                     this.password = password
                 }
                 val userId = auth.currentUserOrNull()?.id ?: ""
+                repository.saveUserProfile(userId, username)
                 _uiState.value = AuthUiState(isAuthenticated = true, userId = userId)
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(

@@ -20,6 +20,7 @@ fun LoginScreen(
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
     var isRegisterMode by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.isAuthenticated) {
@@ -57,6 +58,17 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
+        if (isRegisterMode) {
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label =  { Text("Nombre de usuario") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
@@ -91,10 +103,10 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                if (isRegisterMode) viewModel.signUp(email, password)
+                if (isRegisterMode) viewModel.signUp(email, password, username)
                 else viewModel.signIn(email, password)
             },
-            enabled = !uiState.isLoading && email.isNotBlank() && password.isNotBlank(),
+            enabled = !uiState.isLoading && email.isNotBlank() && password.isNotBlank() && (!isRegisterMode || username.isNotBlank()),
             modifier = Modifier.fillMaxWidth()
         ) {
             if (uiState.isLoading) {
