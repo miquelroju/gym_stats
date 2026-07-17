@@ -46,6 +46,9 @@ fun NavGraph(
             HomeScreen(
                 userId = authState.userId,
                 onNewSession = { navController.navigate(NavRoutes.Session.route) },
+                onEditSession = { sessionId ->
+                    navController.navigate(NavRoutes.EditSession.route(sessionId))
+                },
                 onHistory = { navController.navigate(NavRoutes.History.route) },
                 onLeaderboard = { navController.navigate(NavRoutes.Leaderboard.route) },
                 onStats = { navController.navigate(NavRoutes.Stats.route) },
@@ -64,6 +67,16 @@ fun NavGraph(
         composable(NavRoutes.Session.route) {
             SessionScreen(
                 userId = authState.userId,
+                sessionId = "",
+                onSessionSaved = { navController.popBackStack() }
+            )
+        }
+
+        composable("session/{sessionId}") { backStackEntry ->
+            val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
+            SessionScreen(
+                userId = authState.userId,
+                sessionId = sessionId,
                 onSessionSaved = { navController.popBackStack() }
             )
         }

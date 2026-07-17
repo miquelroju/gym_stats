@@ -1,5 +1,6 @@
 package com.myapp.gymstats.ui.features.session
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.myapp.gymstats.domain.model.Exercise
@@ -30,7 +31,10 @@ data class SessionUiState(
     val motivationMessage: String? = null,
     val restTimerSeconds: Int = 90,
     val timerRemaining: Int = 0,
-    val isTimerRunning: Boolean = false
+    val isTimerRunning: Boolean = false,
+    val sessionId: String? = null,
+    val isEditMode: Boolean = false,
+    val existingNotes: String = ""
 )
 
 @HiltViewModel
@@ -82,6 +86,51 @@ class SessionViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             currentSets = _uiState.value.currentSets.filter { it.id != setId }
         )
+    }
+
+    fun loadSession(sessionId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            try {
+                val session = repository.getSessionWithSets(sessionId)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isEditMode = true,
+                    sessionId = sessionId,
+                    existingNotes = session.notes,
+                    currentSets = session.sets
+                )
+            } catch (e: Exception) {
+                Log.e("SessionViewModel", "Error loading session", e)
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
+        }
+    }
+
+    fun updateSession(userId: String, notes: String) {
+        val sessionId = _uiState.value.sessionId ?: return
+        val sets = _uiState.value.currentSets
+        if (sets.isEmpty()) return
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            try {
+                // Borra los sets anteriores y guarda los nuevos
+                repository.deleteSetsBySession(sessionId)
+                val session  = WorkoutSession(
+                    id = sessionId,
+                    userId = userId,
+                    date = LocalDate.now().toString(),
+                    notes = notes
+                )
+                val setsWithSession = sets.map { it.copy(sessionId = sessionId) }
+                saveWorkoutSession(session, setsWithSession)
+                _uiState.value = SessionUiState(isSaved = true)
+            } catch (e: Exception) {
+                Log.e("SessionViewModel", "Error updating session", e)
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
+            }
+        }
     }
 
     fun saveSession(userId: String, notes: String = "") {

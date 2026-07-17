@@ -3,6 +3,7 @@ package com.myapp.gymstats.ui.features.auth
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.messaging.FirebaseMessaging
 import com.myapp.gymstats.data.remote.SupabaseClientProvider
 import com.myapp.gymstats.domain.repository.WorkoutRepository
 import com.myapp.gymstats.widget.WidgetEntryPoint
@@ -50,7 +51,7 @@ class AuthViewModel @Inject constructor(
                         )
                         WidgetEntryPoint.saveCurrentUserId(context, uid)
 
-                        com.google.firebase.messaging.FirebaseMessaging.getInstance().token
+                        FirebaseMessaging.getInstance().token
                             .addOnSuccessListener { token ->
                                 viewModelScope.launch {
                                     repository.saveDeviceToken(uid, token)

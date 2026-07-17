@@ -1,6 +1,7 @@
 package com.myapp.gymstats.ui.features.home
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -8,8 +9,12 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -26,6 +31,7 @@ import com.myapp.gymstats.ui.navigation.NavRoutes
 fun HomeScreen(
     userId: String,
     onNewSession: () -> Unit,
+    onEditSession: (String) -> Unit,
     onHistory: () -> Unit,
     onLeaderboard: () -> Unit,
     onStats: () -> Unit,
@@ -36,6 +42,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var menuExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         viewModel.loadSessions(userId)
@@ -46,26 +53,49 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("GymStats") },
                 actions = {
-                    IconButton(onClick = onStats) {
-                        Icon(Icons.Default.BarChart, contentDescription = "Estadísticas")
-                    }
-                    IconButton(onClick = onLeaderboard) {
-                        Icon(Icons.Default.EmojiEvents, contentDescription = "Leaderboard")
-                    }
-                    IconButton(onClick = onHistory) {
-                        Icon(Icons.Default.DateRange, contentDescription = "Historial")
-                    }
-                    IconButton(onClick = onSocial) {
-                        Icon(Icons.Default.Group, contentDescription = "Social")
-                    }
-                    IconButton(onClick = onCreacioDeRutinas) {
-                        Icon(Icons.Default.NoteAdd, contentDescription = "Crear Rutina")
-                    }
                     IconButton(onClick = onSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Configuración")
                     }
-                    IconButton(onClick = onSignOut) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar sesión")
+                    Box {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Más opciones")
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Estadísticas") },
+                                leadingIcon = { Icon(Icons.Default.BarChart, null) },
+                                onClick = { menuExpanded = false; onStats() }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Leaderboard") },
+                                leadingIcon = { Icon(Icons.Default.EmojiEvents, null) },
+                                onClick = { menuExpanded = false; onLeaderboard() }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Historial") },
+                                leadingIcon = { Icon(Icons.Default.DateRange, null) },
+                                onClick = { menuExpanded = false; onHistory() }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Social") },
+                                leadingIcon = { Icon(Icons.Default.Group, null) },
+                                onClick = { menuExpanded = false; onSocial() }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Crear Rutina") },
+                                leadingIcon = { Icon(Icons.Default.NoteAdd, null) },
+                                onClick = { menuExpanded = false; onCreacioDeRutinas() }
+                            )
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text("Cerrar sesión") },
+                                leadingIcon = { Icon(Icons.Default.ExitToApp, null) },
+                                onClick = { menuExpanded = false; onSignOut() }
+                            )
+                        }
                     }
                 }
             )
@@ -118,7 +148,11 @@ fun HomeScreen(
                 else -> {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(uiState.recentSessions) { session ->
-                            SessionCard(session = session)
+                            SessionCard(
+                                session = session,
+                                onEdit = { onEditSession(session.id) },
+                                onDelete = { viewModel.deleteSession(session.id) }
+                            )
                         }
                     }
                 }
@@ -128,25 +162,73 @@ fun HomeScreen(
 }
 
 @Composable
-fun SessionCard(session: WorkoutSession) {
+fun SessionCard(
+    session: WorkoutSession,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var menuExpanded by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Eliminar sesión") },
+            text = { Text("¿Seguro que quieres eliminar la sesión del ${session.date}? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = { showDeleteDialog = false; onDelete() }) {
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = session.date,
-                style = MaterialTheme.typography.titleSmall
-            )
-            if (session.notes.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = session.notes,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        Row (
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(session.date, style = MaterialTheme.typography.titleSmall)
+                if (session.notes.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        session.notes,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Box {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Editar") },
+                        leadingIcon = { Icon(Icons.Default.Edit, null) },
+                        onClick = { menuExpanded = false; onEdit() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
+                        leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) },
+                        onClick = { menuExpanded = false; showDeleteDialog = true }
+                    )
+                }
             }
         }
     }

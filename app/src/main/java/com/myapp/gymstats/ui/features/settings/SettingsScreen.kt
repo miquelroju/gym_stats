@@ -2,6 +2,9 @@ package com.myapp.gymstats.ui.features.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -11,6 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
+val AVATAR_OPTIONS = listOf(
+    "💪", "🔥", "🦍", "🏋️", "⚡", "🥇", "🐉", "🦁",
+    "🚀", "🎯", "🧠", "🥊", "🏆", "💎", "🌊", "🐺"
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -19,6 +27,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showAvatarPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         if (userId.isNotBlank()) viewModel.load(userId)
@@ -29,6 +38,28 @@ fun SettingsScreen(
             kotlinx.coroutines.delay(1500)
             viewModel.onSavedDismissed()
         }
+    }
+
+    if (showAvatarPicker) {
+        AlertDialog(
+            onDismissRequest = { showAvatarPicker = false },
+            title = { Text("Elige tu avatar") },
+            text = {
+                LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier.height(220.dp)) {
+                    items(AVATAR_OPTIONS) { emoji ->
+                        TextButton(onClick = {
+                            viewModel.updateAvatarEmoji(emoji)
+                            showAvatarPicker = false
+                        }) {
+                            Text(emoji, style = MaterialTheme.typography.headlineMedium)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAvatarPicker = false }) { Text("Cancelar") }
+            }
+        )
     }
 
     Scaffold(
@@ -58,6 +89,45 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
+
+            // --- Perfil --------------------------------------------------------
+            Text("Perfil", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                FilledTonalButton(
+                    onClick = { showAvatarPicker = true },
+                    modifier = Modifier.size(64.dp),
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Text(uiState.avatarEmoji, style = MaterialTheme.typography.headlineMedium)
+                }
+                OutlinedTextField(
+                    value = uiState.username,
+                    onValueChange = { viewModel.updateUsername(it) },
+                    label = { Text("Nombre de usuario") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Button(
+                onClick = { viewModel.saveProfile() },
+                enabled = uiState.username.isNotBlank(),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (uiState.profileSaved)  "✅ Perfil guardado" else "Guardar perfil")
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(24.dp))
 
             // --- Temporizador de descanso --------------------------------------
             Text("Temporizador de descanso", style = MaterialTheme.typography.titleMedium)

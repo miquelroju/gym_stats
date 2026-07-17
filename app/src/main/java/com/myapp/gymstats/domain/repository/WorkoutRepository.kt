@@ -2,6 +2,7 @@ package com.myapp.gymstats.domain.repository
 
 import com.myapp.gymstats.domain.model.CheckinFeedEntry
 import com.myapp.gymstats.domain.model.Exercise
+import com.myapp.gymstats.domain.model.FriendSearchResult
 import com.myapp.gymstats.domain.model.LeaderboardEntry
 import com.myapp.gymstats.domain.model.UserSettings
 import com.myapp.gymstats.domain.model.WorkoutSession
@@ -34,7 +35,9 @@ interface WorkoutRepository {
 
     // Perfil
     suspend fun saveUserProfile(userId: String, username: String)
+    suspend fun saveUserProfile(userId: String, username: String, avatarEmoji: String = "\uD83D\uDCAA")
     suspend fun getUserProfile(userId: String): String? // returns username
+    suspend fun getUserAvatarEmoji(userId: String): String?
 
     // Historial amb sets inclosos (per a pantalla de detall)
     suspend fun getSessionWithSets(sessionId: String): WorkoutSession
@@ -52,4 +55,10 @@ interface WorkoutRepository {
     // Sincro amb Supabase
     suspend fun syncPendingData()
     suspend fun saveDeviceToken(userId: String, token: String)
+
+    // Friends
+    suspend fun getMyFriendCode(userId: String): String?
+    suspend fun findUserByFriendCode(code: String): FriendSearchResult?
+    suspend fun addFriend(userId: String, friendId: String)
+    suspend fun getCheckinFeedFriends(userId: String): List<CheckinFeedEntry>
 }

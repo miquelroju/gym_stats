@@ -5,6 +5,7 @@ import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.myapp.gymstats.domain.model.CheckinFeedEntry
+import com.myapp.gymstats.domain.model.FriendSearchResult
 import com.myapp.gymstats.domain.repository.WorkoutRepository
 import com.myapp.gymstats.widget.StreakGlanceWidget
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,7 +21,13 @@ data class SocialUiState(
     val feed: List<CheckinFeedEntry> = emptyList(),
     val hasCheckedInToday: Boolean = false,
     val myStreak: Int = 0,
-    val isCheckingIn: Boolean = false
+    val isCheckingIn: Boolean = false,
+    val myFriendCode: String = "",
+    val searchCode: String = "",
+    val searchResult: FriendSearchResult? = null,
+    val searchError: String? = null,
+    val isSearching: Boolean = false,
+    val friendAdded: Boolean = false
 )
 
 @HiltViewModel
@@ -40,7 +47,8 @@ class SocialViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
-                val feed = repository.getCheckinFeed()
+                val feed = repository.getCheckinFeedFriends(userId)
+                val friendCode = repository.getMyFriendCode(userId) ?: ""
                 val checkedIn = repository.hasCheckedInToday(userId)
                 val streak = repository.getUserStreak(userId)
 
@@ -48,7 +56,8 @@ class SocialViewModel @Inject constructor(
                     isLoading = false,
                     feed = feed,
                     hasCheckedInToday = checkedIn,
-                    myStreak = streak
+                    myStreak = streak,
+                    myFriendCode = friendCode
                 )
             } catch (e: Exception) {
                 android.util.Log.e("SocialViewModel", "Error loading social data", e)
@@ -70,6 +79,32 @@ class SocialViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isCheckingIn = false)
 
             StreakGlanceWidget().updateAll(context)
+        }
+    }
+
+    fun updateSearchCode(code: String) {
+        _uiState.value = _uiState.value.copy(searchCode = code, searchResult = null, searchError = null)
+    }
+
+    fun searchFriend() {
+        val code = _uiState.value.searchCode.trim()
+        if (code.isBlank()) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSearching = true, searchError = null)
+            val result = repository.findUserByFriendCode(code)
+            _uiState.value = _uiState.value.copy(
+                isSearching = false,
+                searchResult = result,
+                searchError = if (result == null) "No se encontró ningún usuario con ese código" else null
+            )
+        }
+    }
+
+    fun addFriend(friendId: String) {
+        viewModelScope.launch {
+            repository.addFriend(currentUserId, friendId)
+            _uiState.value = _uiState.value.copy(friendAdded = true, searchResult = null, searchCode = "")
+            load(currentUserId)
         }
     }
 }

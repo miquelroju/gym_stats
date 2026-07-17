@@ -59,7 +59,17 @@ fun WorkoutSetEntity.toDto() = WorkoutSetDto(
 @Serializable
 data class UserProfileDto(
     val id: String,
-    val username: String
+    val username: String,
+    @SerialName("avatar_emoji") val avatarEmoji: String = "\uD83D\uDCAA",
+    @SerialName("friend_code") val friendCode: String = ""
+)
+
+@Serializable
+data class FriendSearchResultDto(
+    @SerialName("user_id") val userId: String,
+    val username: String,
+    @SerialName("avatar_emoji") val avatarEmoji: String,
+    @SerialName("friend_code") val friendCode: String
 )
 
 @Serializable

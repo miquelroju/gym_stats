@@ -1,12 +1,15 @@
 package com.myapp.gymstats.ui.features.social
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -112,6 +115,64 @@ fun SocialScreen(
                                 style = MaterialTheme.typography.titleSmall,
                                 maxLines = 1
                             )
+                        }
+                    }
+                }
+            }
+
+            // Codigo de amigo
+            Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Tu código", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(uiState.myFriendCode, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    }
+                    IconButton(onClick = { /* copiar al portapapeles */ }) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = "Copiar código")
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Añadir amigo
+            OutlinedTextField(
+                value = uiState.searchCode,
+                onValueChange = { viewModel.updateSearchCode(it) },
+                label = { Text("Código de amigo (ej: GYM-A3X9") },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                trailingIcon = {
+                    IconButton(onClick = { viewModel.searchFriend() }) {
+                        Icon(Icons.Default.Search, null)
+                    }
+                },
+                singleLine = true
+            )
+
+            uiState.searchError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp))
+            }
+
+            uiState.searchResult?.let { result ->
+                Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(result.avatarEmoji, style = MaterialTheme.typography.headlineSmall)
+                            Column {
+                                Text(result.username, fontWeight = FontWeight.Medium)
+                                Text(result.friendCode, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        Button(onClick = { viewModel.addFriend(result.userId) }) {
+                            Text("Añadir")
                         }
                     }
                 }

@@ -9,6 +9,7 @@ import com.myapp.gymstats.data.local.entity.toEntity
 import com.myapp.gymstats.data.remote.CheckinFeedDto
 import com.myapp.gymstats.data.remote.DailyCheckinDto
 import com.myapp.gymstats.data.remote.ExerciseDto
+import com.myapp.gymstats.data.remote.FriendSearchResultDto
 import com.myapp.gymstats.data.remote.LeaderboardEntryDto
 import com.myapp.gymstats.data.remote.SupabaseClientProvider
 import com.myapp.gymstats.data.remote.UserProfileDto
@@ -16,6 +17,7 @@ import com.myapp.gymstats.data.remote.UserSettingsDto
 import com.myapp.gymstats.data.remote.toDto
 import com.myapp.gymstats.domain.model.CheckinFeedEntry
 import com.myapp.gymstats.domain.model.Exercise
+import com.myapp.gymstats.domain.model.FriendSearchResult
 import com.myapp.gymstats.domain.model.LeaderboardEntry
 import com.myapp.gymstats.domain.model.UserSettings
 import com.myapp.gymstats.domain.model.WorkoutSession
@@ -131,6 +133,24 @@ class WorkoutRepositoryImpl @Inject constructor(
                 UserProfileDto(id = userId, username = username)
             )
         }.onFailure { Log.w("WorkoutRepo", "Profile save failed: ${it.message}") }
+    }
+
+    override suspend fun saveUserProfile(userId: String, username: String, avatarEmoji: String) {
+        runCatching {
+            client.from("user_profiles").upsert(
+                UserProfileDto(id = userId, username = username, avatarEmoji = avatarEmoji)
+            )
+        }.onFailure { Log.w("WorkoutRepo", "Profile save failed: ${it.message}") }
+    }
+
+    override suspend fun getUserAvatarEmoji(userId: String): String? {
+        return runCatching {
+            client.from("user_profiles")
+                .select {
+                    filter { eq("id", userId) }
+                }
+                .decodeSingleOrNull<UserProfileDto>()?.avatarEmoji
+        }.getOrNull()
     }
 
     override suspend fun getUserProfile(userId: String): String? {
@@ -274,5 +294,40 @@ class WorkoutRepositoryImpl @Inject constructor(
                 mapOf("user_id" to userId, "fcm_token" to token)
             )
         }.onFailure { Log.w("WorkoutRepo", "Token save failed: ${it.message}") }
+    }
+
+    // --- Friends ---------------------------------------------------
+    override suspend fun getMyFriendCode(userId: String): String? {
+        return runCatching {
+            client.from("user_profiles")
+                .select{ filter { eq("id", userId) } }
+                .decodeSingleOrNull<UserProfileDto>()?.friendCode
+        }.getOrNull()
+    }
+
+    override suspend fun findUserByFriendCode(code: String): FriendSearchResult? {
+        return runCatching {
+            val params = buildJsonObject { put("p_code", code) }
+            client.postgrest.rpc("find_user_by_friend_code", params)
+                .decodeSingleOrNull<FriendSearchResultDto>()
+                ?.let { FriendSearchResult(it.userId, it.username, it.avatarEmoji, it.friendCode) }
+        }.getOrNull()
+    }
+
+    override suspend fun addFriend(userId: String, friendId: String) {
+        runCatching {
+            client.from("friendships").insert(
+                mapOf("user_id" to userId, "friend_id" to friendId)
+            )
+        }.onFailure { Log.w("WorkoutRepo", "Add friend failed:  ${it.message}") }
+    }
+
+    override suspend fun getCheckinFeedFriends(userId: String): List<CheckinFeedEntry> {
+        return runCatching {
+            val params = buildJsonObject { put("p_user_id", userId) }
+            client.postgrest.rpc("get_checkin_feed_friends", params)
+                .decodeList<CheckinFeedDto>()
+                .map { CheckinFeedEntry(it.userId, it.username, it.avatarEmoji, it.checkedIn) }
+        }.getOrElse { emptyList() }
     }
 }

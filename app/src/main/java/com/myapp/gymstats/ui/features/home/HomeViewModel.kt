@@ -3,6 +3,7 @@ package com.myapp.gymstats.ui.features.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.myapp.gymstats.domain.model.WorkoutSession
+import com.myapp.gymstats.domain.repository.WorkoutRepository
 import com.myapp.gymstats.domain.usecase.GetSessionHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,13 +20,17 @@ data class HomeUiState (
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val getSessionHistory: GetSessionHistoryUseCase
+    private val getSessionHistory: GetSessionHistoryUseCase,
+    private val repository: WorkoutRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private var currentUserId: String = ""
+
     fun loadSessions(userId: String) {
+        currentUserId = userId
         viewModelScope.launch {
             getSessionHistory(userId).collect { sessions ->
                 _uiState.value = HomeUiState(
@@ -33,6 +38,12 @@ class HomeViewModel @Inject constructor(
                     recentSessions = sessions.take(5)
                 )
             }
+        }
+    }
+
+    fun deleteSession(sessionId: String) {
+        viewModelScope.launch {
+            repository.deleteSession(sessionId)
         }
     }
 }

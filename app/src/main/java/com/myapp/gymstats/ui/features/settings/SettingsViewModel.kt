@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.myapp.gymstats.domain.model.UserSettings
 import com.myapp.gymstats.domain.repository.WorkoutRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +15,10 @@ import javax.inject.Inject
 data class SettingsUiState(
     val isLoading: Boolean = true,
     val settings: UserSettings = UserSettings(),
-    val isSaved: Boolean = false
+    val isSaved: Boolean = false,
+    val username: String = "",
+    val avatarEmoji: String = "\uD83D\uDCAA",
+    val profileSaved: Boolean = false
 )
 
 @HiltViewModel
@@ -33,11 +37,35 @@ class SettingsViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 val settings = repository.getUserSettings(userId)
-                _uiState.value = SettingsUiState(isLoading = false, settings = settings)
+                val username = repository.getUserProfile(userId) ?: ""
+                val avatarEmoji = repository.getUserAvatarEmoji(userId) ?: "💪"
+                _uiState.value = SettingsUiState(
+                    isLoading = false,
+                    settings = settings,
+                    username = username,
+                    avatarEmoji = avatarEmoji
+                )
             } catch (e: Exception) {
                 android.util.Log.e("SettingsViewModel", "Error loading settings", e)
-                _uiState.value = SettingsUiState(isLoading = false, settings = UserSettings())
+                _uiState.value = SettingsUiState(isLoading = false)
             }
+        }
+    }
+
+    fun updateUsername(value: String) {
+        _uiState.value = _uiState.value.copy(username = value)
+    }
+
+    fun updateAvatarEmoji(value: String) {
+        _uiState.value = _uiState.value.copy(avatarEmoji = value)
+    }
+
+    fun saveProfile() {
+        viewModelScope.launch {
+            repository.saveUserProfile(userId, _uiState.value.username, _uiState.value.avatarEmoji)
+            _uiState.value = _uiState.value.copy(profileSaved = true)
+            delay(1500)
+            _uiState.value = _uiState.value.copy(profileSaved = false)
         }
     }
 

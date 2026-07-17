@@ -20,6 +20,7 @@ import com.myapp.gymstats.domain.model.WorkoutSet
 @Composable
 fun SessionScreen(
     userId: String,
+    sessionId: String = "",
     onSessionSaved: () -> Unit,
     viewModel: SessionViewModel = hiltViewModel()
 ) {
@@ -33,6 +34,14 @@ fun SessionScreen(
 
     LaunchedEffect(userId) {
         if (userId.isNotBlank()) viewModel.loadRestTimerSetting(userId)
+    }
+
+    LaunchedEffect(sessionId) {
+        if (sessionId.isNotBlank()) viewModel.loadSession(sessionId)
+    }
+
+    LaunchedEffect(uiState.existingNotes) {
+        if (uiState.existingNotes.isNotBlank()) notes = uiState.existingNotes
     }
 
     LaunchedEffect(uiState.isSaved) {
@@ -54,7 +63,7 @@ fun SessionScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Nueva sesión") })
+            TopAppBar(title = { Text(if (uiState.isEditMode) "Editar sesión" else "Nueva sesión") })
         }
     ) { padding ->
         LazyColumn(
@@ -206,7 +215,10 @@ fun SessionScreen(
 
                 item {
                     Button(
-                        onClick = { viewModel.saveSession(userId, notes) },
+                        onClick = {
+                            if (uiState.isEditMode) viewModel.updateSession(userId, notes)
+                            else viewModel.saveSession(userId, notes)
+                        },
                         enabled = !uiState.isLoading,
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -217,7 +229,7 @@ fun SessionScreen(
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                         } else {
-                            Text("Guardar sesión")
+                            Text(if (uiState.isEditMode) "Actualizar sesión" else "Guardar sesión")
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
