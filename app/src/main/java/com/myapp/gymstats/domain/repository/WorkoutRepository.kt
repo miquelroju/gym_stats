@@ -51,6 +51,5 @@ interface WorkoutRepository {
 
     // Sincro amb Supabase
     suspend fun syncPendingData()
-
     suspend fun saveDeviceToken(userId: String, token: String)
 }
