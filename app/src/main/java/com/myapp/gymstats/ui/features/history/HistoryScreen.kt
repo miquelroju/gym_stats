@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +19,7 @@ import com.myapp.gymstats.domain.model.WorkoutSession
 fun HistoryScreen(
     userId: String,
     onBack: () -> Unit,
+    onEditSession: (String) -> Unit,
     viewModel: HistoryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -71,7 +73,10 @@ fun HistoryScreen(
                     contentPadding = PaddingValues(vertical = 16.dp)
                 ) {
                     items(uiState.sessions) { session ->
-                        HistorySessionCard(session = session)
+                        HistorySessionCard(
+                            session = session,
+                            onEdit = { onEditSession(session.id) }
+                        )
                     }
                 }
             }
@@ -80,7 +85,7 @@ fun HistoryScreen(
 }
 
 @Composable
-fun HistorySessionCard(session: WorkoutSession) {
+fun HistorySessionCard(session: WorkoutSession, onEdit: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -108,6 +113,23 @@ fun HistorySessionCard(session: WorkoutSession) {
                     text="· ${set.exerciseName}: ${set.reps} reps × ${set.weightKg} kg",
                     style = MaterialTheme.typography.bodySmall
                 )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(onClick = onEdit) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Editar")
             }
         }
     }

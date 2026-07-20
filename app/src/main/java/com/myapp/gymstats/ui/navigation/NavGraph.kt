@@ -84,7 +84,10 @@ fun NavGraph(
         composable(NavRoutes.History.route) {
             HistoryScreen(
                 userId = authState.userId,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onEditSession = { sessionId ->
+                    navController.navigate("session/$sessionId")
+                }
             )
         }
 
