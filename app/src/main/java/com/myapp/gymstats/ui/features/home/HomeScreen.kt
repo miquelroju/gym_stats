@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NoteAdd
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,6 +40,7 @@ fun HomeScreen(
     onSettings: () -> Unit,
     onSignOut: () -> Unit,
     onCreacioDeRutinas: () -> Unit,
+    onProfile: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -88,6 +90,11 @@ fun HomeScreen(
                                 text = { Text("Crear Rutina") },
                                 leadingIcon = { Icon(Icons.Default.NoteAdd, null) },
                                 onClick = { menuExpanded = false; onCreacioDeRutinas() }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Mi perfil") },
+                                leadingIcon = { Icon(Icons.Default.Person, null) },
+                                onClick = { menuExpanded = false; onProfile() }
                             )
                             HorizontalDivider()
                             DropdownMenuItem(

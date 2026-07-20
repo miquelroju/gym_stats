@@ -17,6 +17,7 @@ import com.myapp.gymstats.ui.features.settings.SettingsScreen
 import com.myapp.gymstats.ui.features.social.SocialScreen
 import com.myapp.gymstats.ui.features.stats.StatsScreen
 import com.myapp.gymstats.ui.features.crearrutinas.RoutinesScreen //creacio de rutinas
+import com.myapp.gymstats.ui.features.profile.ProfileScreen
 
 @Composable
 fun NavGraph(
@@ -55,6 +56,7 @@ fun NavGraph(
                 onSocial = { navController.navigate(NavRoutes.Social.route) },
                 onCreacioDeRutinas = {navController.navigate(NavRoutes.CreacionDeRutinas.route) },
                 onSettings = { navController.navigate(NavRoutes.Settings.route) },
+                onProfile = { navController.navigate(NavRoutes.Profile.route) },
                 onSignOut = {
                     authViewModel.signOut()
                     navController.navigate(NavRoutes.Login.route) {
@@ -123,6 +125,13 @@ fun NavGraph(
                 onBack = {
                     navController.popBackStack()
                 })
+        }
+
+        composable(NavRoutes.Profile.route) {
+            ProfileScreen(
+                userId = authState.userId,
+                onBack = { navController.popBackStack() }
+            )
+        }
     }
-}
 }
