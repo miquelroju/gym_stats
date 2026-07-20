@@ -45,18 +45,9 @@ class AuthViewModel @Inject constructor(
                 when (status) {
                     is SessionStatus.Authenticated -> {
                         val uid = status.session.user?.id ?: ""
-                        _uiState.value = AuthUiState(
-                            isAuthenticated = true,
-                            userId = uid
-                        )
+                        _uiState.value = AuthUiState(isAuthenticated = true, userId = uid)
                         WidgetEntryPoint.saveCurrentUserId(context, uid)
-
-                        FirebaseMessaging.getInstance().token
-                            .addOnSuccessListener { token ->
-                                viewModelScope.launch {
-                                    repository.saveDeviceToken(uid, token)
-                                }
-                            }
+                        saveFcmToken(uid)
                     }
                     is SessionStatus.NotAuthenticated -> {
                         _uiState.value = AuthUiState(isAuthenticated = false, userId = "")
@@ -71,10 +62,10 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             val session = auth.currentSessionOrNull()
             if (session != null) {
-                _uiState.value = AuthUiState(
-                    isAuthenticated = true,
-                    userId = session.user?.id ?: ""
-                )
+                val uid = session.user?.id ?: ""
+                _uiState.value = AuthUiState(isAuthenticated = true, userId = uid)
+                WidgetEntryPoint.saveCurrentUserId(context, uid)
+                saveFcmToken(uid)
             }
         }
     }
@@ -141,5 +132,14 @@ class AuthViewModel @Inject constructor(
                 "Sin conexión. Comprueba tu internet"
             else -> "Ha ocurrido un error. Inténtalo de nuevo."
         }
+    }
+
+    private fun saveFcmToken(userId: String) {
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                viewModelScope.launch {
+                    runCatching { repository.saveDeviceToken(userId, token) }
+                }
+            }
     }
 }
