@@ -89,7 +89,10 @@ fun NavGraph(
         }
 
         composable(NavRoutes.Leaderboard.route) {
-            LeaderboardScreen(onBack = { navController.popBackStack() })
+            LeaderboardScreen(
+                userId = authState.userId,
+                onBack = { navController.popBackStack() }
+            )
         }
 
         composable(NavRoutes.Stats.route) {

@@ -16,31 +16,46 @@ val MUSCLE_GROUPS = listOf("Pecho", "Espalda", "Piernas", "Hombros", "Brazos", "
 data class LeaderboardUiState(
     val isLoading: Boolean = false,
     val entries: List<LeaderboardEntry> = emptyList(),
-    val selectedGroup: String = MUSCLE_GROUPS.first()
+    val selectedGroup: String = MUSCLE_GROUPS.first(),
+    val friendsOnly: Boolean = false
 )
 
 @HiltViewModel
-class LeaderboardViewModel @Inject constructor (
+class LeaderboardViewModel @Inject constructor(
     private val repository: WorkoutRepository
 ) : ViewModel() {
+
     private val _uiState = MutableStateFlow(LeaderboardUiState())
     val uiState: StateFlow<LeaderboardUiState> = _uiState.asStateFlow()
 
-    init { loadLeaderboard(MUSCLE_GROUPS.first()) }
+    private var currentUserId: String = ""
+
+    fun init(userId: String) {
+        currentUserId = userId
+        loadLeaderboard()
+    }
 
     fun selectMuscleGroup(group: String) {
         _uiState.value = _uiState.value.copy(selectedGroup = group)
-        loadLeaderboard(group)
+        loadLeaderboard()
     }
 
-    private fun loadLeaderboard(muscleGroup: String) {
+    fun toggleFriendsOnly(friendsOnly: Boolean) {
+        _uiState.value = _uiState.value.copy(friendsOnly = friendsOnly)
+        loadLeaderboard()
+    }
+
+    private fun loadLeaderboard() {
+        val group = _uiState.value.selectedGroup
+        val friendsOnly = _uiState.value.friendsOnly
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val entries = repository.getLeaderboard(muscleGroup)
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                entries = entries
-            )
+            val entries = if (friendsOnly && currentUserId.isNotBlank()) {
+                repository.getLeaderboardFriends(currentUserId, group)
+            } else {
+                repository.getLeaderboard(group)
+            }
+            _uiState.value = _uiState.value.copy(isLoading = false, entries = entries)
         }
     }
 }

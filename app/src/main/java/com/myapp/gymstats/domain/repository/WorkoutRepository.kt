@@ -32,6 +32,7 @@ interface WorkoutRepository {
 
     // Leaderboard
     suspend fun getLeaderboard(muscleGroup: String): List<LeaderboardEntry>
+    suspend fun getLeaderboardFriends(userId: String, muscleGroup: String): List<LeaderboardEntry>
 
     // Perfil
     suspend fun saveUserProfile(userId: String, username: String)

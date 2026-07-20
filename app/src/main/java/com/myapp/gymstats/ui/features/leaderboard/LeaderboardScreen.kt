@@ -20,10 +20,13 @@ import com.myapp.gymstats.domain.model.LeaderboardEntry
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LeaderboardScreen(
+    userId: String,
     onBack: () -> Unit,
     viewModel: LeaderboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(userId) { viewModel.init(userId) }
 
     Scaffold(
         topBar = {
@@ -42,9 +45,28 @@ fun LeaderboardScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Tabs de gruos musculars
+            // Tabs Global / Amigos
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = !uiState.friendsOnly,
+                    onClick = { viewModel.toggleFriendsOnly(false) },
+                    label = { Text("🌍 Global") }
+                )
+                FilterChip(
+                    selected = uiState.friendsOnly,
+                    onClick = { viewModel.toggleFriendsOnly(true) },
+                    label = { Text("👥 Amigos") }
+                )
+            }
+
+            // Tabs de grupos musculares
             LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(MUSCLE_GROUPS) { group ->
@@ -67,7 +89,8 @@ fun LeaderboardScreen(
                 uiState.entries.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            "Aún no hay datos para ${uiState.selectedGroup}",
+                            if (uiState.friendsOnly) "Ningún amigo tiene datos para ${uiState.selectedGroup}"
+                            else "Aún no hay datos para ${uiState.selectedGroup}",
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -103,7 +126,8 @@ fun LeaderboardRow(position: Int, entry: LeaderboardEntry) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp),
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(medal, style = MaterialTheme.typography.titleMedium)

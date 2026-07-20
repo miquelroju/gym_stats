@@ -127,6 +127,31 @@ class WorkoutRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getLeaderboardFriends(
+        userId: String,
+        muscleGroup: String
+    ): List<LeaderboardEntry> {
+        return runCatching {
+            val params = buildJsonObject {
+                put("p_user_id", userId)
+                put("p_muscle_group", muscleGroup)
+            }
+            client.postgrest.rpc("get_leaderboard_friends", params)
+                .decodeList< LeaderboardEntryDto>()
+                .map {
+                    LeaderboardEntry(
+                        username = it.username,
+                        exerciseName = it.exercise,
+                        bestScore = it.bestScore,
+                        userId = it.userId
+                    )
+                }
+        }.getOrElse {
+            Log.w("WorkoutRepo", "Leaderboard friends fetch failed: ${it.message}")
+            emptyList()
+        }
+    }
+
     override suspend fun saveUserProfile(userId: String, username: String) {
         runCatching {
             client.from("user_profiles").upsert(
