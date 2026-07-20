@@ -102,3 +102,12 @@ data class DailyCheckinDto(
     @SerialName("user_id") val userId: String,
     val date: String
 )
+
+@Serializable
+
+data class FriendDto(
+    @SerialName("friend_id") val friendId: String,
+    val username: String,
+    @SerialName("avatar_emoji") val avatarEmoji: String,
+    @SerialName("friend_code") val friendCode: String
+)

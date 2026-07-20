@@ -5,6 +5,7 @@ import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.myapp.gymstats.domain.model.CheckinFeedEntry
+import com.myapp.gymstats.domain.model.Friend
 import com.myapp.gymstats.domain.model.FriendSearchResult
 import com.myapp.gymstats.domain.repository.WorkoutRepository
 import com.myapp.gymstats.widget.StreakGlanceWidget
@@ -27,7 +28,9 @@ data class SocialUiState(
     val searchResult: FriendSearchResult? = null,
     val searchError: String? = null,
     val isSearching: Boolean = false,
-    val friendAdded: Boolean = false
+    val friendAdded: Boolean = false,
+    val friends: List<Friend> = emptyList(),
+    val isLoadingFriends: Boolean = false
 )
 
 @HiltViewModel
@@ -51,13 +54,15 @@ class SocialViewModel @Inject constructor(
                 val friendCode = repository.getMyFriendCode(userId) ?: ""
                 val checkedIn = repository.hasCheckedInToday(userId)
                 val streak = repository.getUserStreak(userId)
+                val friends = repository.getMyFriends(userId)
 
                 _uiState.value = SocialUiState(
                     isLoading = false,
                     feed = feed,
                     hasCheckedInToday = checkedIn,
                     myStreak = streak,
-                    myFriendCode = friendCode
+                    myFriendCode = friendCode,
+                    friends = friends
                 )
             } catch (e: Exception) {
                 android.util.Log.e("SocialViewModel", "Error loading social data", e)
@@ -104,6 +109,13 @@ class SocialViewModel @Inject constructor(
         viewModelScope.launch {
             repository.addFriend(currentUserId, friendId)
             _uiState.value = _uiState.value.copy(friendAdded = true, searchResult = null, searchCode = "")
+            load(currentUserId)
+        }
+    }
+
+    fun removeFriend(friendId: String) {
+        viewModelScope.launch {
+            repository.removeFriend(currentUserId, friendId)
             load(currentUserId)
         }
     }

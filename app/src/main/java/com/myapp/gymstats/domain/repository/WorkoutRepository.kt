@@ -2,6 +2,7 @@ package com.myapp.gymstats.domain.repository
 
 import com.myapp.gymstats.domain.model.CheckinFeedEntry
 import com.myapp.gymstats.domain.model.Exercise
+import com.myapp.gymstats.domain.model.Friend
 import com.myapp.gymstats.domain.model.FriendSearchResult
 import com.myapp.gymstats.domain.model.LeaderboardEntry
 import com.myapp.gymstats.domain.model.UserSettings
@@ -62,4 +63,6 @@ interface WorkoutRepository {
     suspend fun findUserByFriendCode(code: String): FriendSearchResult?
     suspend fun addFriend(userId: String, friendId: String)
     suspend fun getCheckinFeedFriends(userId: String): List<CheckinFeedEntry>
+    suspend fun getMyFriends(userId: String): List<Friend>
+    suspend fun removeFriend(userId: String, friendId: String)
 }

@@ -9,6 +9,7 @@ import com.myapp.gymstats.data.local.entity.toEntity
 import com.myapp.gymstats.data.remote.CheckinFeedDto
 import com.myapp.gymstats.data.remote.DailyCheckinDto
 import com.myapp.gymstats.data.remote.ExerciseDto
+import com.myapp.gymstats.data.remote.FriendDto
 import com.myapp.gymstats.data.remote.FriendSearchResultDto
 import com.myapp.gymstats.data.remote.LeaderboardEntryDto
 import com.myapp.gymstats.data.remote.SupabaseClientProvider
@@ -17,6 +18,7 @@ import com.myapp.gymstats.data.remote.UserSettingsDto
 import com.myapp.gymstats.data.remote.toDto
 import com.myapp.gymstats.domain.model.CheckinFeedEntry
 import com.myapp.gymstats.domain.model.Exercise
+import com.myapp.gymstats.domain.model.Friend
 import com.myapp.gymstats.domain.model.FriendSearchResult
 import com.myapp.gymstats.domain.model.LeaderboardEntry
 import com.myapp.gymstats.domain.model.UserSettings
@@ -354,5 +356,36 @@ class WorkoutRepositoryImpl @Inject constructor(
                 .decodeList<CheckinFeedDto>()
                 .map { CheckinFeedEntry(it.userId, it.username, it.avatarEmoji, it.checkedIn) }
         }.getOrElse { emptyList() }
+    }
+
+    override suspend fun getMyFriends(userId: String): List<Friend> {
+        return runCatching {
+            val params = buildJsonObject { put("p_user_id", userId) }
+            client.postgrest.rpc("get_my_friends", params)
+                .decodeList<FriendDto>()
+                .map { Friend(it.friendId, it.username, it.avatarEmoji, it.friendCode) }
+        }.getOrElse {
+            Log.w("WorkoutRepo", "Get friends failed: ${it.message}")
+            emptyList()
+        }
+    }
+
+    override suspend fun removeFriend(userId: String, friendId: String) {
+        runCatching {
+            client.from("friendships").delete {
+                filter {
+                    or {
+                        and {
+                            eq("user_id", userId)
+                            eq("friend_id", friendId)
+                        }
+                        and {
+                            eq("user_id", friendId)
+                            eq("friend_id", userId)
+                        }
+                    }
+                }
+            }
+        }.onFailure { Log.w("WorkoutRepo", "Remove friend failed: ${it.message}") }
     }
 }
