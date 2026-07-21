@@ -104,10 +104,16 @@ data class DailyCheckinDto(
 )
 
 @Serializable
-
 data class FriendDto(
     @SerialName("friend_id") val friendId: String,
     val username: String,
     @SerialName("avatar_emoji") val avatarEmoji: String,
     @SerialName("friend_code") val friendCode: String
+)
+
+@Serializable
+data class ExerciseMuscleDto(
+    @SerialName("exercise_name") val exerciseName: String,
+    val muscle: String,
+    val intensity: Int
 )

@@ -7,9 +7,11 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
-
     id("com.google.gms.google-services")
 }
+
+val localProps = Properties()
+localProps.load(rootProject.file("local.properties").inputStream())
 
 android {
     namespace = "com.myapp.gymstats"
@@ -22,10 +24,28 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        val localProps = Properties()
-        localProps.load(rootProject.file("local.properties").inputStream())
         buildConfigField("String", "SUPABASE_URL", "\"${localProps["SUPABASE_URL"]}\"")
         buildConfigField("String", "SUPABASE_KEY", "\"${localProps["SUPABASE_KEY"]}\"")
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file(localProps["KEYSTORE_PATH"] as String)
+            storePassword = localProps["KEYSTORE_PASS"] as String
+            keyAlias = localProps["KEY_ALIAS"] as String
+            keyPassword = localProps["KEY_PASS"] as String
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("release")
+        }
     }
 
     compileOptions {
@@ -33,8 +53,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_21
     }
 
-    kotlinOptions {
-        jvmTarget = "21"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        }
     }
 
     buildFeatures {

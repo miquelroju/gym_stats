@@ -14,6 +14,7 @@ interface WorkoutRepository {
     // Exercicis
     fun getAllExercises(): Flow<List<Exercise>>
     suspend fun syncExercisesFromRemote()
+    suspend fun getExerciseMuscles(exerciseName: String): List<Pair<String, Int>>
 
     // Sessions
     fun getSessionsByUser(userId: String): Flow<List<WorkoutSession>>

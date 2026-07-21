@@ -9,6 +9,7 @@ import com.myapp.gymstats.data.local.entity.toEntity
 import com.myapp.gymstats.data.remote.CheckinFeedDto
 import com.myapp.gymstats.data.remote.DailyCheckinDto
 import com.myapp.gymstats.data.remote.ExerciseDto
+import com.myapp.gymstats.data.remote.ExerciseMuscleDto
 import com.myapp.gymstats.data.remote.FriendDto
 import com.myapp.gymstats.data.remote.FriendSearchResultDto
 import com.myapp.gymstats.data.remote.LeaderboardEntryDto
@@ -62,6 +63,15 @@ class WorkoutRepositoryImpl @Inject constructor(
         }.onFailure { e ->
             Log.w("WorkoutRepo", "Exercise sync failed: ${e.message}")
         }
+    }
+
+    override suspend fun getExerciseMuscles(exerciseName: String): List<Pair<String, Int>> {
+        return runCatching {
+            client.from("exercise_muscles")
+                .select { filter { eq("exercise_name", exerciseName) } }
+                .decodeList<ExerciseMuscleDto>()
+                .map { it.muscle to it.intensity }
+        }.getOrDefault(emptyList())
     }
 
     // --- Sessions ------------------------------------------------

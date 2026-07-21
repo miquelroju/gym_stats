@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.navigation.compose.rememberNavController
+import com.myapp.gymstats.ui.features.update.UpdateDialog
 import com.myapp.gymstats.ui.navigation.NavGraph
 import com.myapp.gymstats.ui.theme.GymStatsTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -31,6 +32,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             GymStatsTheme {
                 val navController = rememberNavController()
+                UpdateDialog()
                 NavGraph(navController = navController)
             }
         }
